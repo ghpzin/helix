@@ -1,5 +1,6 @@
 {
   stdenv,
+  fetchFromGitHub,
   lib,
   runCommandLocal,
   runCommand,
@@ -39,6 +40,7 @@
     else true;
   grammarsToUse = builtins.filter useGrammar languagesConfig.grammar;
   gitGrammars = builtins.filter isGitGrammar grammarsToUse;
+  grammarsHashes = builtins.fromJSON (builtins.readFile ./grammar.json);
   buildGrammar = grammar: let
     gh = toGitHubFetcher grammar.source.git;
     sourceGit = builtins.fetchTree {
@@ -48,11 +50,11 @@
       ref = grammar.source.ref or "HEAD";
       shallow = true;
     };
-    sourceGitHub = builtins.fetchTree {
-      type = "github";
+    sourceGitHub = fetchFromGitHub {
       owner = gh.owner;
       repo = gh.repo;
       inherit (grammar.source) rev;
+      hash = grammarsHashes."${grammar.name}".hash;
     };
     source =
       if isGitHubGrammar grammar
